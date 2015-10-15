@@ -1,10 +1,10 @@
 /*==============================================================================
-            Copyright (c) 2010-2013 QUALCOMM Austria Research Center GmbH.
+            Copyright (c) 2010-2014 QUALCOMM Austria Research Center GmbH.
             All Rights Reserved.
             Qualcomm Confidential and Proprietary
 ==============================================================================*/
 
-// (c) Copyright HutongGames, LLC 2010-2012. All rights reserved.
+// (c) Copyright HutongGames, LLC 2010-2015. All rights reserved.
 
 // original script: DefaultTrackableEventHandler
 // modified to fire PlayMaker events.
@@ -14,33 +14,41 @@ using HutongGames.PlayMaker;
 
 using Vuforia;
 
+using HutongGames.PlayMaker.Ecosystem.Utils;
+
 /// <summary>
 /// A custom handler that implements the ITrackableEventHandler interface to Fire PlayMaker Events.
 /// </summary>
+[RequireComponent (typeof(TrackableBehaviour))]
 public class PlayMakerVuforiaTrackableProxy : MonoBehaviour, ITrackableEventHandler
 {
 
+	public static string TrackableFoundPlayMakerEventName = "VUFORIA / TRACKABLE FOUND";
+	public static string TrackableLostPlayMakerEventName =  "VUFORIA / TRACKABLE LOST";
+
     private TrackableBehaviour mTrackableBehaviour;
     
-	private bool debug;
+	public PlayMakerEventTarget eventTarget;
+
+	[EventTargetVariable("eventTarget")]
+	public PlayMakerEvent trackableFoundEvent = new PlayMakerEvent(TrackableFoundPlayMakerEventName);
+
+	[EventTargetVariable("eventTarget")]
+	public PlayMakerEvent trackableLostEvent = new PlayMakerEvent(TrackableLostPlayMakerEventName);
 	
-	/// <summary>
-	/// The fsm proxy used to send the Vuforia event to Fsm.
-	/// </summary>
-	PlayMakerFSM fsmProxy;
-	
-	void Awake()
-	{
-		_awakePlayMakerProxy();
-	}
-	
+	public bool debug;
+
     void OnEnable()
     {
+		// set up global events if needed
+
         mTrackableBehaviour = GetComponent<TrackableBehaviour>();
         if (mTrackableBehaviour)
         {
             mTrackableBehaviour.RegisterTrackableEventHandler(this);
-        }
+        }else{
+			Debug.LogError("PlayMakerVuforiaTrackableProxy required a TrackableBehaviour component",this);
+		}
     }
 	
 	void OnDisable()
@@ -74,16 +82,17 @@ public class PlayMakerVuforiaTrackableProxy : MonoBehaviour, ITrackableEventHand
 	}
 
 
-
 	private void OnTrackingFound()
 	{
-		FireVuforiaEvent("VUFORIA / TRACKING FOUND");
+		if (debug) Debug.Log("sending  "+trackableFoundEvent.ToString()+" to "+eventTarget.ToString(),this);
+		trackableFoundEvent.SendEvent(null,eventTarget);
 	}
 	
 	
 	private void OnTrackingLost()
 	{
-		FireVuforiaEvent("VUFORIA / TRACKING LOST");
+		if (debug) Debug.Log("sending  "+trackableLostEvent.ToString()+" to "+eventTarget.ToString(),this);
+		trackableLostEvent.SendEvent(null,eventTarget);
 	}
 
 
@@ -91,60 +100,8 @@ public class PlayMakerVuforiaTrackableProxy : MonoBehaviour, ITrackableEventHand
 	[ContextMenu("Help")]
 	public void help ()
 	{
-	    Application.OpenURL ("https://hutonggames.fogbugz.com/default.asp?W990");
+	    Application.OpenURL ("https://hutonggames.fogbugz.com/default.asp?Wxxx");
 	}
 	*/
-	
-	
-	// get the Playmaker Photon proxy fsm.
-	void _awakePlayMakerProxy () {
-	
-		// get the vuforia proxy to fire event from
-		GameObject go = GameObject.Find("PlayMaker Vuforia Proxy");
-		
-		if (go == null )
-		{
-			Debug.LogError("Working with vuforia require that you add a 'PlayMaker Vuforia Proxy' component to the gameObject. You can do so from the menu 'PlayMaker Vuforia/components/Add vuforia proxy to scene'");
-			return;
-		}
-
-		
-		// get the Fsm for reference when sending events.
-		fsmProxy = go.GetComponent<PlayMakerFSM>();
-		if (fsmProxy==null)
-		{
-			return;
-		}
-		
-	}// Awake
-	
-	
-
-	void FireVuforiaEvent(string eventName)
-	{
-		if (debug) {
-			Debug.Log("sending "+eventName+" event to "+this.gameObject.name);
-		}
-		
-		// set the target to be this gameObject.
-		FsmOwnerDefault goTarget = new FsmOwnerDefault();
-		goTarget.GameObject = new FsmGameObject();
-		goTarget.GameObject.Value = this.gameObject;
-		goTarget.OwnerOption = OwnerDefaultOption.SpecifyGameObject;
-		
-       // send the event to this gameObject and all its children
-		FsmEventTarget eventTarget = new FsmEventTarget();
-		eventTarget.excludeSelf = false;
-		eventTarget.target = FsmEventTarget.EventTarget.GameObject;
-		eventTarget.gameObject = goTarget;
-		eventTarget.sendToChildren = true;
-		
-		// create the event.
-		FsmEvent fsmEvent = new FsmEvent(eventName);
-	
-		// send the event
-		fsmProxy.Fsm.Event(eventTarget,fsmEvent.Name); // TOFIX: doesn't work if using simply fsmEvent
-		
-	}// FireVuforiaEvent
 
 }
