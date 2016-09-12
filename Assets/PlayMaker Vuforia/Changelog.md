@@ -1,5 +1,10 @@
 #PlayMaker Vuforia Change log
 
+###1.0.3
+**Release:** 12/09/2016  
+
+**update:** updated to vuforia 6
+
 ###1.0.2
 **Release:** 14/12/2015  
 **Fix:** Compatibility with PlayMaker 1.8f36 ( via PlayMaker Utils update)  
